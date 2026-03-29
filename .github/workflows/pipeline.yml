@@ -100,25 +100,24 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           RESULT: ${{ needs.quality.result }}
           RELEASE_URL: ${{ needs.release.outputs.release_url }}
-          RELEASE_TAG: ${{ needs.release.outputs.release_tag }}
         run: |
-          STATUS_EMOJI="✅"
-          if [ "$RESULT" != "success" ]; then
-            STATUS_EMOJI="❌"
+          echo "Start Telegram step"
+
+          if [ -z "$TELEGRAM_TOKEN" ]; then
+            echo "TELEGRAM_TOKEN is empty → skip"
+            exit 0
           fi
 
-          TEXT=$(printf "%s Pipeline Result: %s\n\nRepository: %s\nMerged Branch: %s → %s\nMerged At: %s\n\nPR: %s\nRelease: %s\nRun: %s/%s/actions/runs/%s" \
-            "$STATUS_EMOJI" \
-            "$RESULT" \
-            "${{ github.repository }}" \
-            "${{ github.head_ref }}" \
-            "${{ github.base_ref }}" \
-            "${{ github.event.pull_request.merged_at }}" \
-            "${{ github.event.pull_request.html_url }}" \
-            "$RELEASE_URL" \
-            "${{ github.server_url }}" \
-            "${{ github.repository }}" \
-            "${{ github.run_id }}")
+          STATUS="SUCCESS"
+          if [ "$RESULT" != "success" ]; then
+            STATUS="FAILED"
+          fi
+
+          TEXT="Pipeline: $STATUS
+Repository: ${{ github.repository }}
+Branch: ${{ github.head_ref }} → ${{ github.base_ref }}
+PR: ${{ github.event.pull_request.html_url }}
+Release: $RELEASE_URL"
 
           RESP=$(curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
             -d "chat_id=${TELEGRAM_CHAT_ID}" \
@@ -127,8 +126,4 @@ jobs:
           echo "Telegram response:"
           echo "$RESP"
 
-          if echo "$RESP" | grep -q '"ok":true'; then
-            echo "Telegram sent successfully"
-          else
-            echo "Telegram failed, but pipeline will not fail"
-          fi
+          echo "Telegram step finished (no fail)"
