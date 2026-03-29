@@ -5,6 +5,9 @@ on:
     branches: ["dev"]
     types: ["closed"]
 
+permissions:
+  contents: write   # ← КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ
+
 jobs:
   quality:
     if: github.event.pull_request.merged == true && startsWith(github.head_ref, 'feature/ticket-')
@@ -77,16 +80,12 @@ jobs:
             Merge PR #${{ github.event.pull_request.number }}
             Branch: ${{ github.head_ref }}
             Merged at: ${{ github.event.pull_request.merged_at }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload flake8 report to release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           files: reports/flake8_report.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
   telegram_notify:
