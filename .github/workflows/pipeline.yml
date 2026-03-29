@@ -1,4 +1,4 @@
-вот код мой name: CI quality + release + telegram
+name: CI quality + release + telegram
 
 on:
   pull_request:
