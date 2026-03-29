@@ -138,4 +138,8 @@ jobs:
           echo "Telegram response:"
           echo "$RESP"
 
-          echo "Telegram step finished"
+          if echo "$RESP" | grep -q '"ok":true'; then
+            echo "Telegram sent successfully"
+          else
+            echo "Telegram failed, but pipeline will continue"
+          fi
