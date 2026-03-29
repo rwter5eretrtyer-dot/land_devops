@@ -9,7 +9,6 @@ permissions:
 
 jobs:
   quality:
-    if: if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
 
     outputs:
@@ -76,9 +75,7 @@ jobs:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: "Release ${{ steps.tag.outputs.tag }}"
           body: |
-            Merge PR #${{ github.event.pull_request.number }}
-            Branch: ${{ github.head_ref }}
-            Merged at: ${{ github.event.pull_request.merged_at }}
+            Auto release after push to dev
 
       - name: Upload flake8 report to release
         uses: softprops/action-gh-release@v2
@@ -89,7 +86,7 @@ jobs:
 
   telegram_notify:
     needs: [quality, release]
-    if: always() && github.event.pull_request.merged == true && startsWith(github.head_ref, 'feature/ticket-')
+    if: always()
     runs-on: ubuntu-latest
 
     steps:
@@ -114,15 +111,11 @@ jobs:
 
           TEXT="Pipeline: $STATUS
 Repository: ${{ github.repository }}
-Branch: ${{ github.head_ref }} → ${{ github.base_ref }}
-PR: ${{ github.event.pull_request.html_url }}
+Branch: ${{ github.ref_name }}
 Release: $RELEASE_URL"
 
           RESP=$(curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
             -d "chat_id=${TELEGRAM_CHAT_ID}" \
             --data-urlencode "text=${TEXT}")
 
-          echo "Telegram response:"
           echo "$RESP"
-
-          echo "Telegram step finished (no fail)"
